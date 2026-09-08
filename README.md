@@ -86,6 +86,20 @@ cetak(kripto.baca_angka_le(dump, 0x1000, 4));  // int 4-byte little-endian di of
 cetak(kripto.baca_angka_be(dump, 0x1000, 8));  // int 8-byte big-endian di offset yang sama
 ```
 
+Baca angka dari BELAKANG buffer (footer/panjang/CRC yang biasanya nempel di akhir file) -- `offset`-nya tinggal dihitung mundur dari `panjang(data)`, gak ada argumen offset-negatif:
+
+```
+buat n_byte = 4;
+buat angka_terakhir = kripto.baca_angka_le(data, panjang(data) - n_byte, n_byte);
+```
+
+`angka_ke_bytes_be/le` di atas balikin TEKS HEX (`"12345678"`), bukan byte mentah -- kalau mau digabung ke buffer yang bakal dibaca `baca_angka_*`, `kripto.hex_decode()` dulu:
+
+```
+buat data = "ABCD" + kripto.hex_decode(kripto.angka_ke_bytes_le(1337, 4));
+cetak(kripto.baca_angka_le(data, panjang(data) - 4, 4));  // 1337
+```
+
 ## Isi
 
 - `kripto.ns` -- hex/url encode-decode, XOR (+ brute force kunci 1-byte), Vigenere, Caesar/ROT13, RSA (bignum beneran lewat plugin `crypto` bawaan nusa -- `make plugins` dulu di instalasi nusa-nya), konversi endian
