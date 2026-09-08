@@ -259,3 +259,39 @@ fungsi angka_ke_hex(n) {
     }
     hasil keluar;
 }
+
+fungsi balik_hex_byte(hex) {
+    buat keluar = "";
+    buat i = panjang(hex) - 2;
+    selama i >= 0 {
+        keluar = keluar + potong(hex, i, i + 2);
+        i = i - 2;
+    }
+    hasil keluar;
+}
+
+fungsi angka_ke_bytes_be(n, panjang_byte) {
+    buat digit = "0123456789abcdef";
+    buat keluar = "";
+    buat sisa = n;
+    untuk (buat i = 0; i < panjang_byte; i = i + 1) {
+        buat b = sisa % 256;
+        buat tinggi = (b - b % 16) / 16;
+        buat rendah = b % 16;
+        keluar = potong(digit, tinggi, tinggi + 1) + potong(digit, rendah, rendah + 1) + keluar;
+        sisa = (sisa - b) / 256;
+    }
+    hasil keluar;
+}
+
+fungsi angka_ke_bytes_le(n, panjang_byte) {
+    hasil balik_hex_byte(angka_ke_bytes_be(n, panjang_byte));
+}
+
+fungsi bytes_ke_angka_be(hex) {
+    hasil hex_ke_angka(hex);
+}
+
+fungsi bytes_ke_angka_le(hex) {
+    hasil hex_ke_angka(balik_hex_byte(hex));
+}

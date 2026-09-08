@@ -19,6 +19,11 @@ buat Rsa = kripto.Rsa;
 buat RsaPrivat = kripto.RsaPrivat;
 buat hex_ke_angka = kripto.hex_ke_angka;
 buat angka_ke_hex = kripto.angka_ke_hex;
+buat balik_hex_byte = kripto.balik_hex_byte;
+buat angka_ke_bytes_be = kripto.angka_ke_bytes_be;
+buat angka_ke_bytes_le = kripto.angka_ke_bytes_le;
+buat bytes_ke_angka_be = kripto.bytes_ke_angka_be;
+buat bytes_ke_angka_le = kripto.bytes_ke_angka_le;
 
 buat urai_chunked = web.urai_chunked;
 buat SesiHttp = web.SesiHttp;
@@ -26,3 +31,5 @@ buat SesiHttp = web.SesiHttp;
 buat cocok_di = forensik.cocok_di;
 buat deteksi_tipe_file = forensik.deteksi_tipe_file;
 buat ekstrak_string = forensik.ekstrak_string;
+buat baca_angka_be = forensik.baca_angka_be;
+buat baca_angka_le = forensik.baca_angka_le;

@@ -36,6 +36,24 @@ fungsi deteksi_tipe_file(data) {
     hasil "tidak dikenal";
 }
 
+fungsi baca_angka_be(data, offset, panjang_byte) {
+    buat n = 0;
+    untuk (buat i = 0; i < panjang_byte; i = i + 1) {
+        n = n * 256 + byte_di(data, offset + i);
+    }
+    hasil n;
+}
+
+fungsi baca_angka_le(data, offset, panjang_byte) {
+    buat n = 0;
+    buat tempat = 1;
+    untuk (buat i = 0; i < panjang_byte; i = i + 1) {
+        n = n + byte_di(data, offset + i) * tempat;
+        tempat = tempat * 256;
+    }
+    hasil n;
+}
+
 fungsi ekstrak_string(data, panjang_min) {
     buat hasil_akhir = [];
     buat mulai = -1;

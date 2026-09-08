@@ -5,7 +5,7 @@ Modul bantu buat CTF (crypto, web, forensik) di Nusantara.
 ## Pasang
 
 ```
-nusa get git:github.com/NusaLang/Kripto
+nusa get github.com/NusaLang/Kripto
 ```
 
 atau taruh manual di `nusantara_modules/Kripto/`.
@@ -42,6 +42,18 @@ cetak(kripto.hex_decode("64617461"));
 cetak(kripto.url_encode("a=1&b=2"));
 ```
 
+### Endian
+
+```
+cetak(kripto.angka_ke_bytes_be(305419896, 4));  // "12345678"
+cetak(kripto.angka_ke_bytes_le(305419896, 4));  // "78563412"
+cetak(kripto.bytes_ke_angka_be("12345678"));    // 305419896
+cetak(kripto.bytes_ke_angka_le("78563412"));    // 305419896
+cetak(kripto.balik_hex_byte("12345678"));       // "78563412"
+```
+
+`angka_ke_bytes_*` selalu zero-pad ke `panjang_byte` byte -- `angka_ke_bytes_be(255, 2)` jadi `"00ff"`, bukan `"ff"`.
+
 ### Web
 
 ```
@@ -62,11 +74,19 @@ cetak(kripto.ekstrak_string(data, 4));
 cetak(kripto.cocok_di(data, 0, "89504e470d0a1a0a"));
 ```
 
+Buat baca angka mentah dari dump biner (RAM dump, dst) -- `baca_angka_be`/`baca_angka_le` baca `panjang_byte` byte langsung dari `data` di posisi `offset` (bukan dari hex string kayak fungsi di atas, dari isi file/dump aslinya):
+
+```
+buat dump = baca_file("memory.dmp");
+cetak(kripto.baca_angka_le(dump, 0x1000, 4));  // int 4-byte little-endian di offset 0x1000
+cetak(kripto.baca_angka_be(dump, 0x1000, 8));  // int 8-byte big-endian di offset yang sama
+```
+
 ## Isi
 
-- `kripto.ns` -- hex/url encode-decode, XOR (+ brute force kunci 1-byte), Vigenere, Caesar/ROT13, RSA
+- `kripto.ns` -- hex/url encode-decode, XOR (+ brute force kunci 1-byte), Vigenere, Caesar/ROT13, RSA, konversi endian
 - `web.ns` -- sesi HTTP (cookie jar, header custom, chunked decode)
-- `forensik.ns` -- deteksi tipe file lewat magic bytes, ekstrak string tercetak
+- `forensik.ns` -- deteksi tipe file lewat magic bytes, ekstrak string tercetak, baca angka endian dari offset (buat RAM dump/binary analysis)
 
 ## Lisensi
 
