@@ -37,6 +37,10 @@ buat priv = kripto.RsaPrivat(3233, 17, 2753);
 buat cipher = pub.enkripsi(65);
 cetak(priv.dekripsi(cipher));
 
+// modulus RSA asli ratusan digit -- lewat teks, bukan angka
+buat pub2 = kripto.Rsa("10000000000000000016800000000000000005031", "65537");
+cetak(pub2.enkripsi("123456789012345678901234567890"));
+
 cetak(kripto.hex_encode("data"));
 cetak(kripto.hex_decode("64617461"));
 cetak(kripto.url_encode("a=1&b=2"));
@@ -84,7 +88,7 @@ cetak(kripto.baca_angka_be(dump, 0x1000, 8));  // int 8-byte big-endian di offse
 
 ## Isi
 
-- `kripto.ns` -- hex/url encode-decode, XOR (+ brute force kunci 1-byte), Vigenere, Caesar/ROT13, RSA, konversi endian
+- `kripto.ns` -- hex/url encode-decode, XOR (+ brute force kunci 1-byte), Vigenere, Caesar/ROT13, RSA (bignum beneran lewat plugin `crypto` bawaan nusa -- `make plugins` dulu di instalasi nusa-nya), konversi endian
 - `web.ns` -- sesi HTTP (cookie jar, header custom, chunked decode)
 - `forensik.ns` -- deteksi tipe file lewat magic bytes, ekstrak string tercetak, baca angka endian dari offset (buat RAM dump/binary analysis)
 

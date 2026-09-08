@@ -219,23 +219,27 @@ fungsi modpow(basis, eksponen, mod) {
     hasil hasil_akhir;
 }
 
+// n/e/d/pesan/cipher semua teks angka desimal (bukan `angka`/double) --
+// modulus RSA asli ratusan digit, kelewat presisi double (~15-16 digit).
+// modpow-nya lewat plugin native `crypto` (bignum beneran, base 2^32).
 kelas Rsa {
     fungsi constructor(n, e) {
-        ini.n = n;
-        ini.e = e;
+        ini.n = ke_teks(n);
+        ini.e = ke_teks(e);
+        ini.plugin = muat_plugin("crypto");
     }
     fungsi enkripsi(pesan) {
-        hasil modpow(pesan, ini.e, ini.n);
+        hasil ini.plugin.modpow(ke_teks(pesan), ini.e, ini.n);
     }
 }
 
 kelas RsaPrivat turunan Rsa {
     fungsi constructor(n, e, d) {
         induk.constructor(n, e);
-        ini.d = d;
+        ini.d = ke_teks(d);
     }
     fungsi dekripsi(cipher) {
-        hasil modpow(cipher, ini.d, ini.n);
+        hasil ini.plugin.modpow(ke_teks(cipher), ini.d, ini.n);
     }
 }
 
