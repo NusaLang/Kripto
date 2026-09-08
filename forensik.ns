@@ -1,0 +1,58 @@
+buat k = impor("./kripto.ns");
+
+fungsi cocok_di(data, offset, pola_hex) {
+    buat pola = k.hex_decode(pola_hex);
+    jika offset + panjang(pola) > panjang(data) {
+        hasil salah;
+    }
+    hasil potong(data, offset, offset + panjang(pola)) == pola;
+}
+
+fungsi deteksi_tipe_file(data) {
+    jika cocok_di(data, 0, "89504e470d0a1a0a") {
+        hasil "png";
+    }
+    jika cocok_di(data, 0, "ffd8ff") {
+        hasil "jpeg";
+    }
+    jika cocok_di(data, 0, "474946383761") || cocok_di(data, 0, "474946383961") {
+        hasil "gif";
+    }
+    jika cocok_di(data, 0, "25504446") {
+        hasil "pdf";
+    }
+    jika cocok_di(data, 0, "7f454c46") {
+        hasil "elf";
+    }
+    jika cocok_di(data, 0, "4d5a") {
+        hasil "pe-exe";
+    }
+    jika cocok_di(data, 0, "1f8b") {
+        hasil "gzip";
+    }
+    jika cocok_di(data, 0, "504b0304") || cocok_di(data, 0, "504b0506") || cocok_di(data, 0, "504b0708") {
+        hasil "zip";
+    }
+    hasil "tidak dikenal";
+}
+
+fungsi ekstrak_string(data, panjang_min) {
+    buat hasil_akhir = [];
+    buat mulai = -1;
+    untuk (buat i = 0; i < panjang(data); i = i + 1) {
+        buat b = byte_di(data, i);
+        buat cetak_bisa = b >= 32 && b <= 126;
+        jika cetak_bisa && mulai < 0 {
+            mulai = i;
+        } lain jika !cetak_bisa && mulai >= 0 {
+            jika i - mulai >= panjang_min {
+                tambah(hasil_akhir, potong(data, mulai, i));
+            }
+            mulai = -1;
+        }
+    }
+    jika mulai >= 0 && panjang(data) - mulai >= panjang_min {
+        tambah(hasil_akhir, potong(data, mulai, panjang(data)));
+    }
+    hasil hasil_akhir;
+}

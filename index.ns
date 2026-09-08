@@ -1,0 +1,28 @@
+buat kripto = impor("./kripto.ns");
+buat web = impor("./web.ns");
+buat forensik = impor("./forensik.ns");
+
+buat xor_byte = kripto.xor_byte;
+buat nilai_hex_digit = kripto.nilai_hex_digit;
+buat hex_encode = kripto.hex_encode;
+buat hex_decode = kripto.hex_decode;
+buat cari = kripto.cari;
+buat url_encode = kripto.url_encode;
+buat url_decode = kripto.url_decode;
+buat XorCipher = kripto.XorCipher;
+buat xor_tebak_kunci_satu_byte = kripto.xor_tebak_kunci_satu_byte;
+buat Vigenere = kripto.Vigenere;
+buat caesar = kripto.caesar;
+buat rot13 = kripto.rot13;
+buat modpow = kripto.modpow;
+buat Rsa = kripto.Rsa;
+buat RsaPrivat = kripto.RsaPrivat;
+buat hex_ke_angka = kripto.hex_ke_angka;
+buat angka_ke_hex = kripto.angka_ke_hex;
+
+buat urai_chunked = web.urai_chunked;
+buat SesiHttp = web.SesiHttp;
+
+buat cocok_di = forensik.cocok_di;
+buat deteksi_tipe_file = forensik.deteksi_tipe_file;
+buat ekstrak_string = forensik.ekstrak_string;

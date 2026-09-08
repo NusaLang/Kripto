@@ -1,0 +1,261 @@
+fungsi xor_byte(a, b) {
+    buat hasil_bit = 0;
+    buat tempat = 1;
+    buat sisa_a = a;
+    buat sisa_b = b;
+    untuk (buat i = 0; i < 8; i = i + 1) {
+        buat bit_a = sisa_a % 2;
+        buat bit_b = sisa_b % 2;
+        buat bit_hasil = 0;
+        jika bit_a != bit_b {
+            bit_hasil = 1;
+        }
+        hasil_bit = hasil_bit + bit_hasil * tempat;
+        sisa_a = (sisa_a - bit_a) / 2;
+        sisa_b = (sisa_b - bit_b) / 2;
+        tempat = tempat * 2;
+    }
+    hasil hasil_bit;
+}
+
+fungsi nilai_hex_digit(c) {
+    jika c >= 48 && c <= 57 {
+        hasil c - 48;
+    }
+    jika c >= 97 && c <= 102 {
+        hasil c - 97 + 10;
+    }
+    jika c >= 65 && c <= 70 {
+        hasil c - 65 + 10;
+    }
+    hasil 0;
+}
+
+fungsi hex_encode(teks) {
+    buat digit = "0123456789abcdef";
+    buat keluar = "";
+    untuk (buat i = 0; i < panjang(teks); i = i + 1) {
+        buat b = byte_di(teks, i);
+        buat tinggi = (b - b % 16) / 16;
+        buat rendah = b % 16;
+        keluar = keluar + potong(digit, tinggi, tinggi + 1) + potong(digit, rendah, rendah + 1);
+    }
+    hasil keluar;
+}
+
+fungsi hex_decode(teks) {
+    buat keluar = "";
+    untuk (buat i = 0; i + 1 < panjang(teks); i = i + 2) {
+        buat tinggi = nilai_hex_digit(byte_di(teks, i));
+        buat rendah = nilai_hex_digit(byte_di(teks, i + 1));
+        keluar = keluar + teks_dari(tinggi * 16 + rendah);
+    }
+    hasil keluar;
+}
+
+fungsi cari(teks, sub) {
+    buat n = panjang(teks);
+    buat m = panjang(sub);
+    jika m == 0 {
+        hasil 0;
+    }
+    untuk (buat i = 0; i + m <= n; i = i + 1) {
+        jika potong(teks, i, i + m) == sub {
+            hasil i;
+        }
+    }
+    hasil -1;
+}
+
+fungsi url_encode(teks) {
+    buat digit = "0123456789ABCDEF";
+    buat keluar = "";
+    untuk (buat i = 0; i < panjang(teks); i = i + 1) {
+        buat c = byte_di(teks, i);
+        buat aman = (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || (c >= 48 && c <= 57) ||
+                    c == 45 || c == 95 || c == 46 || c == 126;
+        jika aman {
+            keluar = keluar + teks_dari(c);
+        } lain {
+            buat tinggi = (c - c % 16) / 16;
+            buat rendah = c % 16;
+            keluar = keluar + "%" + potong(digit, tinggi, tinggi + 1) + potong(digit, rendah, rendah + 1);
+        }
+    }
+    hasil keluar;
+}
+
+fungsi url_decode(teks) {
+    buat keluar = "";
+    buat i = 0;
+    selama i < panjang(teks) {
+        buat c = byte_di(teks, i);
+        jika c == 37 && i + 2 < panjang(teks) {
+            buat tinggi = nilai_hex_digit(byte_di(teks, i + 1));
+            buat rendah = nilai_hex_digit(byte_di(teks, i + 2));
+            keluar = keluar + teks_dari(tinggi * 16 + rendah);
+            i = i + 3;
+        } lain jika c == 43 {
+            keluar = keluar + " ";
+            i = i + 1;
+        } lain {
+            keluar = keluar + teks_dari(c);
+            i = i + 1;
+        }
+    }
+    hasil keluar;
+}
+
+kelas XorCipher {
+    fungsi constructor(kunci_hex) {
+        ini.kunci = hex_decode(kunci_hex);
+    }
+    fungsi jalankan(data_hex) {
+        buat data = hex_decode(data_hex);
+        buat keluar = "";
+        untuk (buat i = 0; i < panjang(data); i = i + 1) {
+            buat kb = byte_di(ini.kunci, i % panjang(ini.kunci));
+            keluar = keluar + teks_dari(xor_byte(byte_di(data, i), kb));
+        }
+        hasil hex_encode(keluar);
+    }
+    fungsi enkripsi(data_hex) {
+        hasil ini.jalankan(data_hex);
+    }
+    fungsi dekripsi(data_hex) {
+        hasil ini.jalankan(data_hex);
+    }
+}
+
+fungsi xor_tebak_kunci_satu_byte(data_hex) {
+    buat data = hex_decode(data_hex);
+    buat kunci_terbaik = 0;
+    buat skor_terbaik = -1;
+    buat teks_terbaik = "";
+    untuk (buat k = 0; k < 256; k = k + 1) {
+        buat plain = "";
+        buat skor = 0;
+        untuk (buat i = 0; i < panjang(data); i = i + 1) {
+            buat b = xor_byte(byte_di(data, i), k);
+            plain = plain + teks_dari(b);
+            jika (b >= 65 && b <= 90) || (b >= 97 && b <= 122) || b == 32 {
+                skor = skor + 1;
+            }
+        }
+        jika skor > skor_terbaik {
+            skor_terbaik = skor;
+            kunci_terbaik = k;
+            teks_terbaik = plain;
+        }
+    }
+    buat keluar = peta_baru();
+    keluar["kunci"] = kunci_terbaik;
+    keluar["teks"] = teks_terbaik;
+    hasil keluar;
+}
+
+kelas Vigenere {
+    fungsi constructor(kunci) {
+        ini.kunci = huruf_besar(kunci);
+    }
+    fungsi geser(teks, arah) {
+        buat keluar = "";
+        buat j = 0;
+        untuk (buat i = 0; i < panjang(teks); i = i + 1) {
+            buat c = byte_di(teks, i);
+            jika (c >= 65 && c <= 90) || (c >= 97 && c <= 122) {
+                buat dasar = 65;
+                jika c >= 97 {
+                    dasar = 97;
+                }
+                buat k = byte_di(ini.kunci, j % panjang(ini.kunci)) - 65;
+                buat baru = (c - dasar + arah * k + 26) % 26 + dasar;
+                keluar = keluar + teks_dari(baru);
+                j = j + 1;
+            } lain {
+                keluar = keluar + teks_dari(c);
+            }
+        }
+        hasil keluar;
+    }
+    fungsi enkripsi(teks) {
+        hasil ini.geser(teks, 1);
+    }
+    fungsi dekripsi(teks) {
+        hasil ini.geser(teks, -1);
+    }
+}
+
+fungsi caesar(teks, geser) {
+    buat keluar = "";
+    untuk (buat i = 0; i < panjang(teks); i = i + 1) {
+        buat c = byte_di(teks, i);
+        jika c >= 65 && c <= 90 {
+            keluar = keluar + teks_dari((c - 65 + geser + 26) % 26 + 65);
+        } lain jika c >= 97 && c <= 122 {
+            keluar = keluar + teks_dari((c - 97 + geser + 26) % 26 + 97);
+        } lain {
+            keluar = keluar + teks_dari(c);
+        }
+    }
+    hasil keluar;
+}
+
+fungsi rot13(teks) {
+    hasil caesar(teks, 13);
+}
+
+fungsi modpow(basis, eksponen, mod) {
+    buat hasil_akhir = 1;
+    buat b = basis % mod;
+    buat e = eksponen;
+    selama e > 0 {
+        jika e % 2 == 1 {
+            hasil_akhir = (hasil_akhir * b) % mod;
+        }
+        e = (e - e % 2) / 2;
+        b = (b * b) % mod;
+    }
+    hasil hasil_akhir;
+}
+
+kelas Rsa {
+    fungsi constructor(n, e) {
+        ini.n = n;
+        ini.e = e;
+    }
+    fungsi enkripsi(pesan) {
+        hasil modpow(pesan, ini.e, ini.n);
+    }
+}
+
+kelas RsaPrivat turunan Rsa {
+    fungsi constructor(n, e, d) {
+        induk.constructor(n, e);
+        ini.d = d;
+    }
+    fungsi dekripsi(cipher) {
+        hasil modpow(cipher, ini.d, ini.n);
+    }
+}
+
+fungsi hex_ke_angka(teks) {
+    buat n = 0;
+    untuk (buat i = 0; i < panjang(teks); i = i + 1) {
+        n = n * 16 + nilai_hex_digit(byte_di(teks, i));
+    }
+    hasil n;
+}
+
+fungsi angka_ke_hex(n) {
+    jika n == 0 {
+        hasil "0";
+    }
+    buat digit = "0123456789abcdef";
+    buat keluar = "";
+    selama n > 0 {
+        keluar = potong(digit, n % 16, n % 16 + 1) + keluar;
+        n = (n - n % 16) / 16;
+    }
+    hasil keluar;
+}

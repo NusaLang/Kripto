@@ -1,0 +1,124 @@
+buat k = impor("./kripto.ns");
+
+fungsi urai_chunked(data) {
+    buat keluar = "";
+    buat pos = 0;
+    selama benar {
+        buat sisa = potong(data, pos, panjang(data));
+        buat akhir_baris = k.cari(sisa, "\r\n");
+        jika akhir_baris < 0 {
+            berhenti;
+        }
+        buat baris_ukuran = potong(sisa, 0, akhir_baris);
+        buat titik_koma = k.cari(baris_ukuran, ";");
+        jika titik_koma >= 0 {
+            baris_ukuran = potong(baris_ukuran, 0, titik_koma);
+        }
+        buat ukuran = k.hex_ke_angka(baris_ukuran);
+        pos = pos + akhir_baris + 2;
+        jika ukuran == 0 {
+            berhenti;
+        }
+        keluar = keluar + potong(data, pos, pos + ukuran);
+        pos = pos + ukuran + 2;
+    }
+    hasil keluar;
+}
+
+kelas SesiHttp {
+    fungsi constructor(host, port) {
+        ini.host = host;
+        ini.port = port;
+        ini.header_tambahan = peta_baru();
+        ini.cookie_jar = peta_baru();
+    }
+    fungsi atur_header(nama, nilai) {
+        ini.header_tambahan[nama] = nilai;
+    }
+    fungsi cookie_teks() {
+        buat kunci = peta_kunci(ini.cookie_jar);
+        buat bagian = [];
+        untuk (buat i = 0; i < panjang(kunci); i = i + 1) {
+            tambah(bagian, kunci[i] + "=" + ini.cookie_jar[kunci[i]]);
+        }
+        hasil gabung(bagian, "; ");
+    }
+    fungsi urai(mentah) {
+        buat bagian = pisah(mentah, "\r\n\r\n");
+        buat header_blok = bagian[0];
+        buat sisa_bagian = potong(bagian, 1, panjang(bagian));
+        buat body = gabung(sisa_bagian, "\r\n\r\n");
+        buat baris_header = pisah(header_blok, "\r\n");
+        buat status_bagian = pisah(baris_header[0], " ");
+        buat status = ke_angka(status_bagian[1]);
+        buat headers = peta_baru();
+        untuk (buat i = 1; i < panjang(baris_header); i = i + 1) {
+            buat baris = baris_header[i];
+            buat pos = k.cari(baris, ":");
+            jika pos < 0 {
+                lanjut;
+            }
+            buat nama = huruf_kecil(potong(baris, 0, pos));
+            buat nilai = potong(baris, pos + 1, panjang(baris));
+            jika panjang(nilai) > 0 && byte_di(nilai, 0) == 32 {
+                nilai = potong(nilai, 1, panjang(nilai));
+            }
+            jika nama == "set-cookie" {
+                buat cnilai = nilai;
+                buat cpos = k.cari(cnilai, ";");
+                jika cpos >= 0 {
+                    cnilai = potong(cnilai, 0, cpos);
+                }
+                buat eqpos = k.cari(cnilai, "=");
+                jika eqpos >= 0 {
+                    ini.cookie_jar[potong(cnilai, 0, eqpos)] = potong(cnilai, eqpos + 1, panjang(cnilai));
+                }
+            } lain {
+                headers[nama] = nilai;
+            }
+        }
+        buat te = headers["transfer-encoding"];
+        jika te != kosong && huruf_kecil(te) == "chunked" {
+            body = urai_chunked(body);
+        }
+        buat keluar = peta_baru();
+        keluar["status"] = status;
+        keluar["header"] = headers;
+        keluar["tubuh"] = body;
+        hasil keluar;
+    }
+    fungsi minta(metode, path, body) {
+        buat fd = tcp_konek(ini.host, ini.port);
+        buat baris = [metode + " " + path + " HTTP/1.1"];
+        tambah(baris, "Host: " + ini.host);
+        tambah(baris, "Connection: close");
+        jika panjang(ini.cookie_jar) > 0 {
+            tambah(baris, "Cookie: " + ini.cookie_teks());
+        }
+        buat kh = peta_kunci(ini.header_tambahan);
+        untuk (buat i = 0; i < panjang(kh); i = i + 1) {
+            tambah(baris, kh[i] + ": " + ini.header_tambahan[kh[i]]);
+        }
+        jika panjang(body) > 0 {
+            tambah(baris, "Content-Length: " + ke_teks(panjang(body)));
+        }
+        buat req = gabung(baris, "\r\n") + "\r\n\r\n" + body;
+        tcp_kirim(fd, req);
+        buat mentah = "";
+        selama benar {
+            buat potongan = tcp_terima(fd, 65536);
+            jika panjang(potongan) == 0 {
+                berhenti;
+            }
+            mentah = mentah + potongan;
+        }
+        tcp_tutup(fd);
+        hasil ini.urai(mentah);
+    }
+    fungsi get(path) {
+        hasil ini.minta("GET", path, "");
+    }
+    fungsi post(path, body) {
+        hasil ini.minta("POST", path, body);
+    }
+}
