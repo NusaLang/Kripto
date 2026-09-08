@@ -82,9 +82,11 @@ Buat baca angka mentah dari dump biner (RAM dump, dst) -- `baca_angka_be`/`baca_
 
 ```
 buat dump = baca_file("memory.dmp");
-cetak(kripto.baca_angka_le(dump, 0x1000, 4));  // int 4-byte little-endian di offset 0x1000
-cetak(kripto.baca_angka_be(dump, 0x1000, 8));  // int 8-byte big-endian di offset yang sama
+cetak(kripto.baca_angka_le(dump, 4096, 4));  // int 4-byte little-endian di offset 4096
+cetak(kripto.baca_angka_be(dump, 4096, 8));  // int 8-byte big-endian di offset yang sama
 ```
+
+**Catatan:** bahasa ini gak punya literal hex (`0x1000`) -- tulis angka desimal langsung, atau hitung dulu (`4096` = `0x1000`).
 
 Baca angka dari BELAKANG buffer (footer/panjang/CRC yang biasanya nempel di akhir file) -- `offset`-nya tinggal dihitung mundur dari `panjang(data)`, gak ada argumen offset-negatif:
 
@@ -100,11 +102,18 @@ buat data = "ABCD" + kripto.hex_decode(kripto.angka_ke_bytes_le(1337, 4));
 cetak(kripto.baca_angka_le(data, panjang(data) - 4, 4));  // 1337
 ```
 
+Bikin payload overflow (padding + alamat return yang di-pack) -- `byte_padding` angka 0-255 (65 = 'A', 144 = NOP), bukan teks, karena bahasa ini gak punya escape `\xNN` buat byte mentah di string literal:
+
+```
+buat payload = kripto.bikin_payload(40, 65, 82539765486, 8, "le");
+tulis_file("payload.bin", payload);
+```
+
 ## Isi
 
 - `kripto.ns` -- hex/url encode-decode, XOR (+ brute force kunci 1-byte), Vigenere, Caesar/ROT13, RSA (bignum beneran lewat plugin `crypto` bawaan nusa -- `make plugins` dulu di instalasi nusa-nya), konversi endian
 - `web.ns` -- sesi HTTP (cookie jar, header custom, chunked decode)
-- `forensik.ns` -- deteksi tipe file lewat magic bytes, ekstrak string tercetak, baca angka endian dari offset (buat RAM dump/binary analysis)
+- `forensik.ns` -- deteksi tipe file lewat magic bytes, ekstrak string tercetak, baca angka endian dari offset (buat RAM dump/binary analysis), bikin payload overflow (padding + alamat)
 
 ## Lisensi
 

@@ -54,6 +54,24 @@ fungsi baca_angka_le(data, offset, panjang_byte) {
     hasil n;
 }
 
+// Payload klasik buat overwrite return address: N byte padding diikuti
+// alamat yang di-pack sesuai endian target-nya. `byte_padding` ANGKA
+// 0-255 (mis. 65 buat 'A', 144 buat NOP `\x90`) -- bukan teks, soalnya
+// bahasa ini gak punya escape `\xNN` buat nulis byte mentah di string
+// literal (`"\x90"` jadi 3 karakter teks "x90", bukan 1 byte 0x90).
+fungsi bikin_payload(panjang_padding, byte_padding, alamat, panjang_alamat, endian) {
+    buat satu_byte = k.hex_decode(k.angka_ke_bytes_be(byte_padding, 1));
+    buat padding = "";
+    untuk (buat i = 0; i < panjang_padding; i = i + 1) {
+        padding = padding + satu_byte;
+    }
+    buat alamat_hex = k.angka_ke_bytes_be(alamat, panjang_alamat);
+    jika endian == "le" {
+        alamat_hex = k.angka_ke_bytes_le(alamat, panjang_alamat);
+    }
+    hasil padding + k.hex_decode(alamat_hex);
+}
+
 fungsi ekstrak_string(data, panjang_min) {
     buat hasil_akhir = [];
     buat mulai = -1;

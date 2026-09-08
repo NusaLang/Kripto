@@ -33,3 +33,4 @@ buat deteksi_tipe_file = forensik.deteksi_tipe_file;
 buat ekstrak_string = forensik.ekstrak_string;
 buat baca_angka_be = forensik.baca_angka_be;
 buat baca_angka_le = forensik.baca_angka_le;
+buat bikin_payload = forensik.bikin_payload;
