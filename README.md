@@ -44,6 +44,24 @@ cetak(pub2.enkripsi("123456789012345678901234567890"));
 cetak(kripto.hex_encode("data"));
 cetak(kripto.hex_decode("64617461"));
 cetak(kripto.url_encode("a=1&b=2"));
+cetak(kripto.url_decode("a%3D1%26b%3D2"));  // "a=1&b=2"
+
+cetak(kripto.hex_ke_angka("ff"));   // 255
+cetak(kripto.angka_ke_hex(255));    // "ff"
+
+cetak(kripto.modpow(4, 13, 497));   // 445
+```
+
+`hex_ke_angka`/`angka_ke_hex` konversi hex-string ke/dari SATU angka biasa (`"ff"` <-> `255`) -- beda sama `angka_ke_bytes_*` di bawah yang urusannya byte-string ber-endian.
+
+`modpow` lewat arithmetic `angka` (double) biasa, jadi cuma aman buat modulus kecil (perkalian internalnya kepotong presisi kalau `mod` udah puluhan juta ke atas). Modulus RSA asli yang ratusan digit lewat kelas `Rsa`/`RsaPrivat` di atas (bignum beneran lewat plugin `crypto`), bukan `modpow()` langsung.
+
+Helper tingkat rendah yang dipakai fungsi-fungsi di atas, jarang dipanggil langsung tapi tetep ada kalau perlu:
+
+```
+cetak(kripto.xor_byte(65, 42));         // 107 -- XOR dua byte (angka 0-255)
+cetak(kripto.nilai_hex_digit(97));      // 10  -- nilai satu digit hex ('a' = kode 97)
+cetak(kripto.cari("halo dunia", "dunia"));  // 5 -- index substring, -1 kalau gak ketemu
 ```
 
 ### Endian
@@ -65,9 +83,17 @@ buat s = kripto.SesiHttp("127.0.0.1", 8080);
 s.atur_header("X-Kunci", "rahasia");
 buat r = s.get("/login");
 cetak(r["status"], r["tubuh"], s.cookie_teks());
+
+buat r2 = s.post("/login", "user=admin&pass=admin");
+cetak(r2["status"], r2["tubuh"]);
 ```
 
-`urai()` bongkar chunked transfer-encoding otomatis kalau ada.
+`urai()` (dipanggil otomatis dari `get`/`post`) bongkar chunked transfer-encoding sendiri kalau ada, lewat `urai_chunked` -- bisa juga dipanggil langsung kalau udah megang body chunked mentah dari tempat lain:
+
+```
+buat mentah = "5\r\nhalo \r\n5\r\ndunia\r\n0\r\n\r\n";
+cetak(kripto.urai_chunked(mentah));  // "halo dunia"
+```
 
 ### Forensik
 
@@ -111,7 +137,7 @@ tulis_file("payload.bin", payload);
 
 ## Isi
 
-- `kripto.ns` -- hex/url encode-decode, XOR (+ brute force kunci 1-byte), Vigenere, Caesar/ROT13, RSA (bignum beneran lewat plugin `crypto` bawaan nusa -- `make plugins` dulu di instalasi nusa-nya), konversi endian
+- `kripto.ns` -- hex/url encode-decode, XOR (+ brute force kunci 1-byte), Vigenere, Caesar/ROT13, RSA (bignum beneran lewat plugin `crypto`, udah kebundel di binary rilis nusa), konversi endian
 - `web.ns` -- sesi HTTP (cookie jar, header custom, chunked decode)
 - `forensik.ns` -- deteksi tipe file lewat magic bytes, ekstrak string tercetak, baca angka endian dari offset (buat RAM dump/binary analysis), bikin payload overflow (padding + alamat)
 
