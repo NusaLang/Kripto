@@ -135,11 +135,47 @@ buat payload = kripto.bikin_payload(40, 65, 82539765486, 8, "le");
 tulis_file("payload.bin", payload);
 ```
 
+### Stego (gambar, audio, video)
+
+Butuh plugin native `gambar` (BMP) dan/atau `audio` (WAV), sama-sama udah kebundel di binary rilis nusa -- gak perlu instalasi tambahan.
+
+```
+// LSB satu channel (BMP 24/32-bit gak terkompresi doang)
+cetak(kripto.lsb_gambar("gambar.bmp", "r", 1));
+
+// coba semua channel warna sekaligus (r/g/b/rgb, + a/rgba kalau 32-bit)
+buat semua = kripto.lsb_gambar_semua_channel("gambar.bmp", 1);
+cetak(semua["r"], semua["g"], semua["b"], semua["rgb"]);
+
+// simpen ulang gambar dengan cuma 1 channel warna aktif -- buat ngeliat
+// pola tersembunyi yang keliatan mata pas channel lain diisolasi
+kripto.pisah_channel_gambar("gambar.bmp", "r", "cuma-merah.bmp");
+```
+
+`channel` bisa satu huruf (`"r"`/`"g"`/`"b"`/`"a"`) atau gabungan (`"rgb"`) -- gabungan artinya bit-nya di-interleave per pixel sesuai urutan channel yang disebut. `n_bit` 1-8, 1 = LSB murni.
+
+```
+// audio (WAV PCM mentah -- 8/16/24/32-bit)
+cetak(kripto.lsb_audio("suara.wav", 1));
+```
+
+```
+// video -- extract tiap frame ke BMP lewat ffmpeg (harus keinstall di
+// sistem), terus tiap frame dianalisa kayak gambar biasa. Balikin larik
+// hex per frame, berhenti pas frame abis atau nyampe batas maksimal.
+buat per_frame = kripto.lsb_video("video.mp4", "/tmp/frame_keluar", "r", 1, 300);
+untuk (buat i = 0; i < panjang(per_frame); i = i + 1) {
+    cetak("frame", i + 1, ":", per_frame[i]);
+}
+```
+
+**Catatan video:** `ffmpeg` nge-decode + nge-encode ulang tiap frame -- kalau video sumbernya dikompresi lossy (H.264/dst, kebanyakan format video beneran), bit LSB yang mau diselundupin bisa rusak duluan pas video itu di-compress pertama kali, sebelum sempet sampe ke tangan kita. Ini bukan batasan `lsb_video()`-nya, tapi sifat kompresi lossy pada umumnya -- kalo challenge-nya beneran nyimpen pesan di LSB video, biasanya videonya lossless (FFV1, rawvideo, dst) atau pesannya emang disengaja biar tahan kompresi.
+
 ## Isi
 
 - `kripto.ns` -- hex/url encode-decode, XOR (+ brute force kunci 1-byte), Vigenere, Caesar/ROT13, RSA (bignum beneran lewat plugin `crypto`, udah kebundel di binary rilis nusa), konversi endian
 - `web.ns` -- sesi HTTP (cookie jar, header custom, chunked decode)
-- `forensik.ns` -- deteksi tipe file lewat magic bytes, ekstrak string tercetak, baca angka endian dari offset (buat RAM dump/binary analysis), bikin payload overflow (padding + alamat)
+- `forensik.ns` -- deteksi tipe file lewat magic bytes, ekstrak string tercetak, baca angka endian dari offset (buat RAM dump/binary analysis), bikin payload overflow (padding + alamat), LSB/channel stego gambar+audio+video
 
 ## Lisensi
 

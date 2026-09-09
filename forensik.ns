@@ -72,6 +72,87 @@ fungsi bikin_payload(panjang_padding, byte_padding, alamat, panjang_alamat, endi
     hasil padding + k.hex_decode(alamat_hex);
 }
 
+// LSB/bitplane stego, gambar (BMP 24/32-bit gak terkompresi lewat
+// plugin native `gambar`). `channel` satu atau gabungan dari "r"/"g"/
+// "b"/"a" (huruf besar/kecil sama), `n_bit` 1-8 (1 = LSB murni).
+fungsi lsb_gambar(path, channel, n_bit) {
+    buat hex = muat_plugin("gambar").bmp_lsb_extract(path, channel, n_bit);
+    jika hex == kosong {
+        lempar "lsb_gambar(): gagal -- '" + path + "' harus BMP 24/32-bit gak terkompresi, channel/n_bit valid";
+    }
+    hasil hex;
+}
+
+// Coba semua channel warna sekaligus (r/g/b masing-masing + gabungan
+// rgb, plus alpha/rgba kalau gambarnya 32-bit) -- balikin peta
+// channel -> hex, biar gak perlu manggil lsb_gambar() satu-satu pas
+// belum tau pesannya disembunyiin di channel mana.
+fungsi lsb_gambar_semua_channel(path, n_bit) {
+    buat g = muat_plugin("gambar");
+    buat info = json_decode(g.bmp_info(path));
+    jika !info.ok {
+        lempar "lsb_gambar_semua_channel(): gagal buka '" + path + "'";
+    }
+    buat daftar_channel = ["r", "g", "b", "rgb"];
+    jika info.bit_depth == 32 {
+        tambah(daftar_channel, "a");
+        tambah(daftar_channel, "rgba");
+    }
+    buat keluar = peta_baru();
+    untuk (buat i = 0; i < panjang(daftar_channel); i = i + 1) {
+        keluar[daftar_channel[i]] = lsb_gambar(path, daftar_channel[i], n_bit);
+    }
+    hasil keluar;
+}
+
+// Simpen ulang gambar dengan cuma satu channel warna aktif ("r"/"g"/
+// "b") atau efek "grayscale"/"invert" -- buat ngeliat pola tersembunyi
+// yang keliatan mata pas satu channel diisolasi.
+fungsi pisah_channel_gambar(path, channel, path_keluaran) {
+    hasil muat_plugin("gambar").bmp_filter(path, path_keluaran, channel);
+}
+
+// LSB stego audio (WAV PCM mentah, 8/16/24/32-bit, lewat plugin native
+// `audio`) -- ekstrak `n_bit` bit terendah dari tiap sample, semua
+// channel interleave apa adanya.
+fungsi lsb_audio(path, n_bit) {
+    buat hex = muat_plugin("audio").wav_lsb_extract(path, n_bit);
+    jika hex == kosong {
+        lempar "lsb_audio(): gagal -- '" + path + "' harus WAV PCM mentah, n_bit 1-8";
+    }
+    hasil hex;
+}
+
+// LSB stego video: extract tiap frame ke BMP lewat `ffmpeg` (harus
+// keinstall di sistem, dipanggil argv-safe lewat jalankan_perintah,
+// bukan didekode ulang manual -- gak ada video decoder di sini), terus
+// tiap frame dianalisa pake lsb_gambar() yang sama kayak gambar biasa.
+// Balikin larik hex per frame (index 0 = frame pertama); berhenti pas
+// nemu frame yang gak ada lagi atau udah nyampe `maks_frame`.
+fungsi lsb_video(path, dir_frame, channel, n_bit, maks_frame) {
+    jalankan_perintah("mkdir", ["-p", dir_frame]);
+    buat pola = dir_frame + "/frame_%04d.bmp";
+    buat r = jalankan_perintah("ffmpeg", ["-y", "-i", path, pola]);
+    jika r.status != 0 {
+        lempar "lsb_video(): ffmpeg gagal -- " + r.error;
+    }
+    buat keluar = [];
+    buat i = 1;
+    selama i <= maks_frame {
+        buat nomor = ke_teks(i);
+        selama panjang(nomor) < 4 {
+            nomor = "0" + nomor;
+        }
+        buat frame_path = dir_frame + "/frame_" + nomor + ".bmp";
+        jika !file_ada(frame_path) {
+            berhenti;
+        }
+        tambah(keluar, lsb_gambar(frame_path, channel, n_bit));
+        i = i + 1;
+    }
+    hasil keluar;
+}
+
 fungsi ekstrak_string(data, panjang_min) {
     buat hasil_akhir = [];
     buat mulai = -1;
